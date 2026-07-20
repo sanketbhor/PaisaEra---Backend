@@ -89,7 +89,9 @@ class TransactionCreate(BaseModel):
 
 class TransactionResponse(CamelResponseModel):
     id: str
-    merchant_name: str
+    # None happens legitimately: SMS-imported rows where the parser could
+    # extract amount/direction but no recognizable merchant string.
+    merchant_name: Optional[str] = None
     amount: Decimal
     direction: TransactionDirection
     category: Optional[str] = None

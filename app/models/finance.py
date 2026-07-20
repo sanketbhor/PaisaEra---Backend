@@ -102,3 +102,21 @@ class Streak(Base):
     current_streak = Column(Numeric(6, 0), default=0)
     longest_streak = Column(Numeric(6, 0), default=0)
     last_activity_date = Column(Date, nullable=True)
+
+
+class MerchantCategoryOverride(Base):
+    """Learned merchant → category mappings, per user.
+
+    source='user' rows come from tap-to-recategorize and always win;
+    source='ai' rows come from the Gemini batch categorizer and beat the
+    static regex rules but never a user's own correction.
+    """
+    __tablename__ = "merchant_category_overrides"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    user_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=False, index=True)
+    merchant_name = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    source = Column(Enum("ai", "user", name="override_source_enum"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_now)
+    updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)

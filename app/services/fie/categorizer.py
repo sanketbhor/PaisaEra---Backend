@@ -16,16 +16,32 @@ import re
 MERCHANT_RULES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"swiggy|zomato|dominos|mcdonald|kfc|behrouz|faasos", re.I), "Khana"),
     (re.compile(r"amazon|flipkart|myntra|ajio|nykaa", re.I), "Shopping"),
-    (re.compile(r"netflix|spotify|hotstar|prime video|youtube premium|sonyliv", re.I), "Entertainment"),
+    # Streaming/recurring services form their own bucket -- the reference
+    # UX shows "Subscription" as a first-class donut slice.
+    (re.compile(r"netflix|spotify|hotstar|prime video|youtube premium|sonyliv", re.I), "Subscription"),
     (re.compile(r"electricity|water bill|gas bill|broadband|wifi|airtel|jio|vodafone", re.I), "Bills"),
     (re.compile(r"uber|ola|rapido|irctc|indigo|redbus", re.I), "Ghumna"),
     (re.compile(r"rent|landlord|housing", re.I), "Rent"),
     (re.compile(r"apollo|pharmacy|hospital|clinic|1mg|pharmeasy", re.I), "Health"),
     (re.compile(r"zerodha|groww|upstox|mutual fund|sip|nps", re.I), "Investment"),
     (re.compile(r"salary|payroll", re.I), "Income"),
+    (re.compile(r"\bemi\b|bajaj finserv|loan repay", re.I), "EMI"),
+    (re.compile(r"hpcl|iocl|bpcl|indian ?oil|petrol|filling station|\bshell\b|\bhp pay\b", re.I), "Petrol"),
+    (re.compile(r"credit card|\bcred\b", re.I), "Credit Card"),
+    # SMS-parsed person-to-person UPI payments (see the mobile parser's
+    # phone-number-merchant labeling) -- a distinct bucket, since for many
+    # Indian users these are the single biggest spend "category" and
+    # lumping them into the default made the category donut useless.
+    (re.compile(r"upi transfer", re.I), "UPI Transfer"),
+    (re.compile(r"paytm|phonepe|gpay|google pay|bhim", re.I), "UPI Transfer"),
 ]
 
-DEFAULT_CATEGORY = "Aur Kuch"
+DEFAULT_CATEGORY = "Miscellaneous"
+
+# Hints from the mobile SMS parser that outrank merchant-name rules --
+# they come from the SMS body (card/EMI wording) which the server never
+# sees. Everything else ("UPI") is a weak fallback below merchant rules.
+STRONG_SMS_HINTS = {"Credit Card", "EMI"}
 
 
 def categorize(merchant_name: str) -> str:
